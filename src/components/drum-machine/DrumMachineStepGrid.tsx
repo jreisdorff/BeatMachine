@@ -26,6 +26,7 @@ type DrumMachineStepGridProps = {
   pattern: StepCell[][];
   setPattern: Dispatch<SetStateAction<StepCell[][]>>;
   setStepHit: (laneIndex: number, step: number) => void;
+  setStepClear: (laneIndex: number, step: number) => void;
   stepPaintRef: MutableRefObject<StepPaintSession | null>;
   currentStep: number;
   isPlaying: boolean;
@@ -42,6 +43,7 @@ export function DrumMachineStepGrid({
   pattern,
   setPattern,
   setStepHit,
+  setStepClear,
   stepPaintRef,
   currentStep,
   isPlaying,
@@ -137,7 +139,7 @@ export function DrumMachineStepGrid({
                     <button
                       type="button"
                       aria-pressed={isStepActive(cell)}
-                      aria-label={`${lane.label} step ${step + 1}, ${stateLabel}. Left click hit, right click grace.`}
+                      aria-label={`${lane.label} step ${step + 1}, ${stateLabel}. Left click or drag to paint; drag from a hit or grace to erase. Right click grace.`}
                       onContextMenu={(e) => e.preventDefault()}
                       onPointerDown={(e) => {
                         if (e.button === 2) {
@@ -158,6 +160,7 @@ export function DrumMachineStepGrid({
                           startLane: rowIndex,
                           startStep: step,
                           didDrag: false,
+                          mode: isStepActive(cell) ? "erase" : "paint",
                         };
                       }}
                       onPointerEnter={() => {
@@ -166,8 +169,13 @@ export function DrumMachineStepGrid({
                         if (rowIndex === s.startLane && step === s.startStep)
                           return;
                         s.didDrag = true;
-                        setStepHit(s.startLane, s.startStep);
-                        setStepHit(rowIndex, step);
+                        if (s.mode === "erase") {
+                          setStepClear(s.startLane, s.startStep);
+                          setStepClear(rowIndex, step);
+                        } else {
+                          setStepHit(s.startLane, s.startStep);
+                          setStepHit(rowIndex, step);
+                        }
                       }}
                       onKeyDown={(e) => {
                         if (e.key !== " " && e.key !== "Enter") return;

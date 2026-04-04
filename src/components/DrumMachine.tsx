@@ -10,6 +10,7 @@ import { useStepPaintFinish } from "@/hooks/useStepPaintFinish";
 import {
   emptyPattern,
   STEP_HIT,
+  STEP_OFF,
   type GraceVolumeStepIndex,
   type StepCell,
 } from "@/lib/drumMachine";
@@ -86,6 +87,15 @@ export function DrumMachine() {
     });
   }, []);
 
+  const setStepClear = useCallback((laneIndex: number, step: number) => {
+    setPattern((p) => {
+      if (p[laneIndex][step] === STEP_OFF) return p;
+      const next = p.map((row) => [...row]);
+      next[laneIndex][step] = STEP_OFF;
+      return next;
+    });
+  }, []);
+
   const clearPattern = () => setPattern(emptyPattern());
 
   return (
@@ -132,6 +142,7 @@ export function DrumMachine() {
         pattern={pattern}
         setPattern={setPattern}
         setStepHit={setStepHit}
+        setStepClear={setStepClear}
         stepPaintRef={stepPaintRef}
         currentStep={currentStep}
         isPlaying={isPlaying}

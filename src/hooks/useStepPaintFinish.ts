@@ -16,6 +16,8 @@ export type StepPaintSession = {
   startLane: number;
   startStep: number;
   didDrag: boolean;
+  /** Drag from an empty cell paints hits; drag from a hit or grace clears. */
+  mode: "paint" | "erase";
 };
 
 export function useStepPaintFinish(
