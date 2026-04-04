@@ -112,7 +112,7 @@ export function DrumMachine() {
         metronomeOn={metronomeOn}
         setMetronomeOn={setMetronomeOn}
         isPlaying={isPlaying}
-        onTogglePlay={() => void togglePlay()}
+        onTogglePlay={togglePlay}
         onClearPattern={clearPattern}
         graceVolumeStep={graceVolumeStep}
         setGraceVolumeStep={setGraceVolumeStep}

@@ -100,7 +100,8 @@ export function useDrumMachineAudio(
     if (g) g.gain.value = linear;
   }, [masterVolume]);
 
-  const ensureAudio = useCallback(async () => {
+  /** Sync graph setup only — use from tap/click handlers; do not await before this. */
+  const getOrCreateAudioContext = useCallback((): AudioContext | null => {
     if (typeof window === "undefined") return null;
     let ctx = audioContextRef.current;
     if (!ctx || ctx.state === "closed") {
@@ -123,11 +124,45 @@ export function useDrumMachineAudio(
       metro.connect(masterGainRef.current);
       metronomeGainRef.current = metro;
     }
+    return ctx;
+  }, []);
+
+  /**
+   * Mobile Safari only unlocks audio if resume runs during the user gesture — no await
+   * before resume. Fire-and-forget the promise; priming helps stubborn WebKit builds.
+   */
+  const unlockAudioInUserGesture = useCallback(() => {
+    const ctx = getOrCreateAudioContext();
+    if (!ctx) return null;
+    if (ctx.state === "suspended") {
+      void ctx.resume();
+    }
+    const master = masterGainRef.current;
+    if (master) {
+      try {
+        const buf = ctx.createBuffer(1, 1, ctx.sampleRate);
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        const silent = ctx.createGain();
+        silent.gain.value = 0;
+        src.connect(silent);
+        silent.connect(master);
+        src.start();
+      } catch {
+        /* ignore */
+      }
+    }
+    return ctx;
+  }, [getOrCreateAudioContext]);
+
+  const ensureAudio = useCallback(async () => {
+    const ctx = getOrCreateAudioContext();
+    if (!ctx) return null;
     if (ctx.state === "suspended") {
       await ctx.resume();
     }
     return ctx;
-  }, []);
+  }, [getOrCreateAudioContext]);
 
   useEffect(() => {
     let cancelled = false;
@@ -278,8 +313,13 @@ export function useDrumMachineAudio(
     };
 
     void (async () => {
-      const ctx = await ensureAudio();
+      const ctx =
+        audioContextRef.current ?? (await ensureAudio());
       if (cancelled || !ctx) return;
+      if (ctx.state !== "running") {
+        await ctx.resume();
+      }
+      if (cancelled || ctx.state !== "running") return;
 
       const start = ctx.currentTime + 0.06;
       transportStartRef.current = start;
@@ -325,16 +365,16 @@ export function useDrumMachineAudio(
     [ensureAudio],
   );
 
-  const togglePlay = useCallback(async () => {
+  const togglePlay = useCallback(() => {
     if (isPlayingRef.current) {
       stopTransport();
       return;
     }
-    await ensureAudio();
+    unlockAudioInUserGesture();
     setCurrentStep(0);
     isPlayingRef.current = true;
     setIsPlaying(true);
-  }, [ensureAudio, stopTransport]);
+  }, [unlockAudioInUserGesture, stopTransport]);
 
   return {
     isPlaying,

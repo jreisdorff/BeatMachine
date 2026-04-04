@@ -183,7 +183,7 @@ export function DrumMachineHeader({
         <button
           type="button"
           onClick={onTogglePlay}
-          className={`shrink-0 rounded-lg px-2.5 py-1 text-[11px] font-medium ${
+          className={`touch-manipulation shrink-0 rounded-lg px-2.5 py-1 text-[11px] font-medium ${
             isPlaying
               ? "bg-rose-600 text-white hover:bg-rose-500"
               : "bg-emerald-600 text-white hover:bg-emerald-500"
