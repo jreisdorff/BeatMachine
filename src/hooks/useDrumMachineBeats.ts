@@ -2,7 +2,6 @@ import {
   createBeatOnServer,
   fetchBeatsDoc,
   setActiveBeatOnServer,
-  updateBeatOnServer,
 } from "@/lib/beatsApiClient";
 import { clonePattern, type SavedBeat } from "@/lib/beatsShared";
 import type { StepCell } from "@/lib/drumMachine";
@@ -33,17 +32,7 @@ export function useDrumMachineBeats(
   const [beatsError, setBeatsError] = useState<string | null>(null);
   const [saveModalOpen, setSaveModalOpen] = useState(false);
   const [saveNameInput, setSaveNameInput] = useState("");
-  const [beatsHydrated, setBeatsHydrated] = useState(false);
-  const cloudSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pullGenerationRef = useRef(0);
-  const patternRef = useRef(pattern);
-  const bpmRef = useRef(bpm);
-  const swingRef = useRef(swing);
-  const activeBeatIdRef = useRef(activeBeatId);
-  patternRef.current = pattern;
-  bpmRef.current = bpm;
-  swingRef.current = swing;
-  activeBeatIdRef.current = activeBeatId;
 
   const applyFullDoc = useCallback(
     (doc: { beats: SavedBeat[]; activeBeatId: string | null }) => {
@@ -80,7 +69,6 @@ export function useDrumMachineBeats(
 
       if (!r.ok) {
         setBeatsError(r.error);
-        setBeatsHydrated(true);
         return;
       }
       if (r.doc.beats.length > 0) {
@@ -89,7 +77,6 @@ export function useDrumMachineBeats(
         setSavedBeats([]);
         setActiveBeatId(null);
       }
-      setBeatsHydrated(true);
     } finally {
       if (gen === pullGenerationRef.current) {
         setBeatsBusy(false);
@@ -100,28 +87,6 @@ export function useDrumMachineBeats(
   useEffect(() => {
     void pullBeatsFromCloud();
   }, [pullBeatsFromCloud]);
-
-  useEffect(() => {
-    if (!beatsHydrated || !activeBeatId) return;
-    if (cloudSaveTimerRef.current) clearTimeout(cloudSaveTimerRef.current);
-    cloudSaveTimerRef.current = setTimeout(() => {
-      cloudSaveTimerRef.current = null;
-      void (async () => {
-        const id = activeBeatIdRef.current;
-        if (!id) return;
-        const r = await updateBeatOnServer(id, {
-          bpm: bpmRef.current,
-          swing: swingRef.current,
-          pattern: clonePattern(patternRef.current),
-        });
-        if (r.ok) setSavedBeats(r.doc.beats);
-        else if (r.status !== 0) setBeatsError(r.error);
-      })();
-    }, 500);
-    return () => {
-      if (cloudSaveTimerRef.current) clearTimeout(cloudSaveTimerRef.current);
-    };
-  }, [beatsHydrated, pattern, bpm, swing, activeBeatId]);
 
   const selectSavedBeat = useCallback(
     async (id: string) => {

@@ -20,19 +20,23 @@ Copy `.env.example` → `.env.local` and fill in values from the [Upstash consol
 | `BEAT_KV_REST_API_URL` | REST endpoint (e.g. `https://xxx.upstash.io`) |
 | `BEAT_KV_REST_API_TOKEN` | Primary token (read/write) |
 
+**Or** use Upstash’s default names (often auto-added by the Vercel + Upstash integration): `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`. The app accepts either pair.
+
 Optional in `.env.local` (not read by the app, for your own use): `BEAT_KV_REST_API_READ_ONLY_TOKEN`, `BEAT_REDIS_URL`, `BEAT_KV_URL`.
 
 Optional for the app:
 
 - **`BEAT_MACHINE_KV_KEY`** — If set, beats are stored under `beatmachine:v1:<your value>`. If unset, the Redis key includes `VERCEL_ENV` (`production` / `preview` / `development`).
 
-Without `BEAT_KV_REST_API_URL` and `BEAT_KV_REST_API_TOKEN`, the **Saved Beats** API returns an error until Redis is configured.
+Without one of the credential pairs above, `/api/beats` returns **503** with a short explanation until Redis is configured.
 
 ## Deploy on Vercel
 
 1. Import the repo in [Vercel](https://vercel.com/new).
-2. Add the same **`BEAT_KV_REST_API_URL`** and **`BEAT_KV_REST_API_TOKEN`** in **Project → Settings → Environment Variables** (from Upstash REST API).
-3. Redeploy after saving env vars.
+2. In **Project → Settings → Environment Variables**, add **either**:
+   - **`BEAT_KV_REST_API_URL`** + **`BEAT_KV_REST_API_TOKEN`**, **or**
+   - **`UPSTASH_REDIS_REST_URL`** + **`UPSTASH_REDIS_REST_TOKEN`** (copy from [Upstash](https://console.upstash.com/) → your database → **REST API**, or use Vercel’s Upstash integration so these are injected automatically).
+3. Apply env vars to **Production** (and **Preview** if you want saves on preview deploys). **Redeploy** after saving — env changes do not affect already-built deployments.
 
 Static samples in `/public` deploy with the app.
 

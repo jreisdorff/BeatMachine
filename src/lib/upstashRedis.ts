@@ -3,21 +3,36 @@ import { Redis } from "@upstash/redis";
 let client: Redis | null = null;
 
 /**
- * Upstash Redis over HTTPS using REST credentials from `.env.local` (or Vercel):
- * - `BEAT_KV_REST_API_URL` — REST URL (e.g. https://xxx.upstash.io)
- * - `BEAT_KV_REST_API_TOKEN` — primary token (read/write)
- *
- * Optional `BEAT_KV_REST_API_READ_ONLY_TOKEN` is not used here; keep it for CLI/tools only.
+ * Resolve REST URL + token. Supports this app's names and Upstash/Vercel defaults
+ * (the Vercel Upstash integration usually sets UPSTASH_REDIS_REST_*).
+ */
+export function resolveUpstashRestCredentials(): {
+  url: string;
+  token: string;
+} | null {
+  const url =
+    process.env.BEAT_KV_REST_API_URL?.trim() ||
+    process.env.UPSTASH_REDIS_REST_URL?.trim();
+  const token =
+    process.env.BEAT_KV_REST_API_TOKEN?.trim() ||
+    process.env.UPSTASH_REDIS_REST_TOKEN?.trim();
+  if (!url || !token) return null;
+  return { url, token };
+}
+
+/**
+ * Upstash Redis over HTTPS. Configure either:
+ * - `BEAT_KV_REST_API_URL` + `BEAT_KV_REST_API_TOKEN`, or
+ * - `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` (common on Vercel).
  */
 export function getBeatRedis(): Redis {
   if (client) return client;
-  const url = process.env.BEAT_KV_REST_API_URL?.trim();
-  const token = process.env.BEAT_KV_REST_API_TOKEN?.trim();
-  if (!url || !token) {
+  const creds = resolveUpstashRestCredentials();
+  if (!creds) {
     throw new Error(
-      "Missing BEAT_KV_REST_API_URL or BEAT_KV_REST_API_TOKEN. Add them from the Upstash console (REST API).",
+      "Missing Redis REST credentials. Set BEAT_KV_REST_API_URL + BEAT_KV_REST_API_TOKEN, or UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN from the Upstash console.",
     );
   }
-  client = new Redis({ url, token });
+  client = new Redis({ url: creds.url, token: creds.token });
   return client;
 }
