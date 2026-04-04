@@ -30,6 +30,18 @@ export function clonePattern(pattern: StepCell[][]): StepCell[][] {
   return pattern.map((row) => [...row]);
 }
 
+/** Copy steps 0..half-1 onto half..STEP_COUNT-1 (two identical 16-step phrases). */
+export function duplicateFirstHalfPattern(pattern: StepCell[][]): StepCell[][] {
+  const half = STEP_COUNT / 2;
+  return pattern.map((row) => {
+    const next = [...row];
+    for (let i = 0; i < half; i++) {
+      next[half + i] = next[i]!;
+    }
+    return next;
+  });
+}
+
 export function patternsEqual(a: StepCell[][], b: StepCell[][]): boolean {
   if (a.length !== b.length) return false;
   for (let i = 0; i < a.length; i++) {

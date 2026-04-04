@@ -3,7 +3,11 @@ import {
   fetchBeatsDoc,
   setActiveBeatOnServer,
 } from "@/lib/beatsApiClient";
-import { clonePattern, type SavedBeat } from "@/lib/beatsShared";
+import {
+  clonePattern,
+  duplicateFirstHalfPattern,
+  type SavedBeat,
+} from "@/lib/beatsShared";
 import type { StepCell } from "@/lib/drumMachine";
 import {
   type Dispatch,
@@ -25,6 +29,8 @@ export function useDrumMachineBeats(
   setSwing: (v: number) => void,
   isPlaying: boolean,
   stopTransport: () => void,
+  /** When true, Save sends two copies of the first 16 steps as the full 32. */
+  compactStepGrid: boolean,
 ) {
   const [savedBeats, setSavedBeats] = useState<SavedBeat[]>([]);
   const [activeBeatId, setActiveBeatId] = useState<string | null>(null);
@@ -120,11 +126,15 @@ export function useDrumMachineBeats(
     }
     setBeatsError(null);
     setBeatsBusy(true);
+    const rawPattern = clonePattern(pattern);
+    const patternToSave = compactStepGrid
+      ? duplicateFirstHalfPattern(rawPattern)
+      : rawPattern;
     const r = await createBeatOnServer({
       name,
       bpm,
       swing,
-      pattern: clonePattern(pattern),
+      pattern: patternToSave,
     });
     setBeatsBusy(false);
     if (!r.ok) {
@@ -134,7 +144,7 @@ export function useDrumMachineBeats(
     applyFullDoc(r.doc);
     setSaveModalOpen(false);
     setSaveNameInput("");
-  }, [saveNameInput, bpm, swing, pattern, applyFullDoc]);
+  }, [saveNameInput, bpm, swing, pattern, applyFullDoc, compactStepGrid]);
 
   const openSaveModal = useCallback(() => {
     setBeatsError(null);

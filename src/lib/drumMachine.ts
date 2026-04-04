@@ -1,6 +1,9 @@
 /** Total steps in the pattern (one bar of 32nd notes in 4/4). */
 export const STEP_COUNT = 32;
 
+/** First half only — grid shows this many columns below the `sm` breakpoint. */
+export const STEP_COUNT_VISIBLE_COMPACT = 16;
+
 /** Grid cell: off, full-velocity hit (left click), quiet grace note (right click). */
 export type StepCell = 0 | 1 | 2;
 export const STEP_OFF = 0 as const;

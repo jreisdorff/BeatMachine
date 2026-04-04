@@ -4,6 +4,7 @@ import { DrumMachineHeader } from "@/components/drum-machine/DrumMachineHeader";
 import { DrumMachineSavedBeats } from "@/components/drum-machine/DrumMachineSavedBeats";
 import { DrumMachineStepGrid } from "@/components/drum-machine/DrumMachineStepGrid";
 import { SaveBeatModal } from "@/components/drum-machine/SaveBeatModal";
+import { useCompactStepGrid } from "@/hooks/useCompactStepGrid";
 import { useDrumMachineAudio } from "@/hooks/useDrumMachineAudio";
 import { useDrumMachineBeats } from "@/hooks/useDrumMachineBeats";
 import { useStepPaintFinish } from "@/hooks/useStepPaintFinish";
@@ -26,6 +27,8 @@ export function DrumMachine() {
   const [graceVolumeStep, setGraceVolumeStep] =
     useState<GraceVolumeStepIndex>(1);
   const [masterVolume, setMasterVolume] = useState(85);
+
+  const compactStepGrid = useCompactStepGrid();
 
   const {
     isPlaying,
@@ -65,6 +68,7 @@ export function DrumMachine() {
     setSwing,
     isPlaying,
     stopTransport,
+    compactStepGrid,
   );
 
   const stepPaintRef = useStepPaintFinish(setPattern);
@@ -148,6 +152,7 @@ export function DrumMachine() {
         isPlaying={isPlaying}
         sampleNames={sampleNames}
         onSampleUpload={onSampleUpload}
+        compactSteps={compactStepGrid}
       />
 
       <DrumMachineSavedBeats
