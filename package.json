@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "dedupe-beats": "node --env-file=.env.local scripts/dedupe-beats.mjs",
+    "dedupe-beats:dry": "node --env-file=.env.local scripts/dedupe-beats.mjs --dry-run"
   },
   "dependencies": {
     "@upstash/redis": "^1.37.0",
