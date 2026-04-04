@@ -25,11 +25,15 @@ function kvDataKey(): string {
   return `beatmachine:v1:${env}`;
 }
 
+function isDocVersion1(v: unknown): boolean {
+  return v === 1 || v === "1" || (typeof v === "number" && Number(v) === 1);
+}
+
 function sanitizeDoc(raw: unknown): BeatsDocument {
   const base = emptyBeatsDocument();
   if (!raw || typeof raw !== "object") return base;
   const o = raw as Partial<BeatsDocument>;
-  if (o.version !== 1 || !Array.isArray(o.beats)) return base;
+  if (!isDocVersion1(o.version) || !Array.isArray(o.beats)) return base;
   const beats: SavedBeat[] = o.beats
     .slice(0, MAX_BEATS)
     .map((b) => ({

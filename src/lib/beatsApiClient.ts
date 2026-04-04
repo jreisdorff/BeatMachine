@@ -13,6 +13,7 @@ async function post(body: Record<string, unknown>): Promise<BeatsApiResult> {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
+      cache: "no-store",
     });
   } catch {
     return { ok: false, error: "Network error", status: 0 };

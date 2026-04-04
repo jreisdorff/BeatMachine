@@ -33,7 +33,17 @@ export function useDrumMachineBeats(
   const [beatsError, setBeatsError] = useState<string | null>(null);
   const [saveModalOpen, setSaveModalOpen] = useState(false);
   const [saveNameInput, setSaveNameInput] = useState("");
+  const [beatsHydrated, setBeatsHydrated] = useState(false);
   const cloudSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pullGenerationRef = useRef(0);
+  const patternRef = useRef(pattern);
+  const bpmRef = useRef(bpm);
+  const swingRef = useRef(swing);
+  const activeBeatIdRef = useRef(activeBeatId);
+  patternRef.current = pattern;
+  bpmRef.current = bpm;
+  swingRef.current = swing;
+  activeBeatIdRef.current = activeBeatId;
 
   const applyFullDoc = useCallback(
     (doc: { beats: SavedBeat[]; activeBeatId: string | null }) => {
@@ -56,39 +66,53 @@ export function useDrumMachineBeats(
   );
 
   const pullBeatsFromCloud = useCallback(async () => {
+    const gen = ++pullGenerationRef.current;
     setBeatsBusy(true);
     setBeatsError(null);
-    const r = await fetchBeatsDoc();
-    setBeatsBusy(false);
-    if (!r.ok) {
-      setBeatsError(r.error);
-      return;
-    }
-    if (r.doc.beats.length > 0) {
-      applyFullDoc(r.doc);
-    } else {
-      setSavedBeats([]);
-      setActiveBeatId(null);
+    try {
+      let r = await fetchBeatsDoc();
+      if (!r.ok && (r.status === 503 || r.status === 0)) {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        if (gen !== pullGenerationRef.current) return;
+        r = await fetchBeatsDoc();
+      }
+      if (gen !== pullGenerationRef.current) return;
+
+      if (!r.ok) {
+        setBeatsError(r.error);
+        setBeatsHydrated(true);
+        return;
+      }
+      if (r.doc.beats.length > 0) {
+        applyFullDoc(r.doc);
+      } else {
+        setSavedBeats([]);
+        setActiveBeatId(null);
+      }
+      setBeatsHydrated(true);
+    } finally {
+      if (gen === pullGenerationRef.current) {
+        setBeatsBusy(false);
+      }
     }
   }, [applyFullDoc]);
 
   useEffect(() => {
-    const t = window.setTimeout(() => {
-      void pullBeatsFromCloud();
-    }, 0);
-    return () => window.clearTimeout(t);
+    void pullBeatsFromCloud();
   }, [pullBeatsFromCloud]);
 
   useEffect(() => {
-    if (!activeBeatId) return;
+    if (!beatsHydrated || !activeBeatId) return;
     if (cloudSaveTimerRef.current) clearTimeout(cloudSaveTimerRef.current);
     cloudSaveTimerRef.current = setTimeout(() => {
       cloudSaveTimerRef.current = null;
       void (async () => {
-        const r = await updateBeatOnServer(activeBeatId, {
-          bpm,
-          swing,
-          pattern: clonePattern(pattern),
+        const id = activeBeatIdRef.current;
+        if (!id) return;
+        const r = await updateBeatOnServer(id, {
+          bpm: bpmRef.current,
+          swing: swingRef.current,
+          pattern: clonePattern(patternRef.current),
         });
         if (r.ok) setSavedBeats(r.doc.beats);
         else if (r.status !== 0) setBeatsError(r.error);
@@ -97,7 +121,7 @@ export function useDrumMachineBeats(
     return () => {
       if (cloudSaveTimerRef.current) clearTimeout(cloudSaveTimerRef.current);
     };
-  }, [pattern, bpm, swing, activeBeatId]);
+  }, [beatsHydrated, pattern, bpm, swing, activeBeatId]);
 
   const selectSavedBeat = useCallback(
     async (id: string) => {
