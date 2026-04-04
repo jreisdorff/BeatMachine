@@ -1,4 +1,5 @@
 import type { BeatsDocument, SavedBeat } from "@/lib/beatsShared";
+import type { StepCell } from "@/lib/drumMachine";
 
 type ApiOk = { ok: true; doc: BeatsDocument };
 type ApiErr = { ok: false; error: string; status: number };
@@ -61,7 +62,7 @@ export function createBeatOnServer(
 
 export function updateBeatOnServer(
   beatId: string,
-  fields: { bpm: number; swing: number; pattern: boolean[][] },
+  fields: { bpm: number; swing: number; pattern: StepCell[][] },
 ): Promise<BeatsApiResult> {
   return post({
     action: "update",

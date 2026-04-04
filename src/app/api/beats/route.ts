@@ -1,5 +1,4 @@
 import { randomUUID } from "node:crypto";
-import { kv } from "@vercel/kv";
 import {
   clampBpm,
   clampSwing,
@@ -8,6 +7,7 @@ import {
   type BeatsDocument,
   type SavedBeat,
 } from "@/lib/beatsShared";
+import { getBeatRedis } from "@/lib/upstashRedis";
 
 export const runtime = "nodejs";
 
@@ -51,12 +51,14 @@ function sanitizeDoc(raw: unknown): BeatsDocument {
 }
 
 async function readDoc(key: string): Promise<BeatsDocument> {
-  const raw = await kv.get<BeatsDocument>(key);
+  const redis = getBeatRedis();
+  const raw = await redis.get<BeatsDocument>(key);
   return sanitizeDoc(raw);
 }
 
 async function writeDoc(key: string, doc: BeatsDocument): Promise<void> {
-  await kv.set(key, doc);
+  const redis = getBeatRedis();
+  await redis.set(key, doc);
 }
 
 export async function POST(req: Request) {
@@ -143,7 +145,7 @@ export async function POST(req: Request) {
     return Response.json(
       {
         error:
-          "Could not reach the database. On Vercel, add a Redis/KV store and set KV_REST_API_URL and KV_REST_API_TOKEN.",
+          "Could not reach the database. Fail....",
       },
       { status: 503 },
     );

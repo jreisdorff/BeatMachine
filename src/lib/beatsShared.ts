@@ -1,6 +1,10 @@
 import {
   LANES,
   STEP_COUNT,
+  STEP_GRACE,
+  STEP_HIT,
+  STEP_OFF,
+  type StepCell,
   emptyPattern,
 } from "@/lib/drumMachine";
 
@@ -9,7 +13,7 @@ export type SavedBeat = {
   name: string;
   bpm: number;
   swing: number;
-  pattern: boolean[][];
+  pattern: StepCell[][];
 };
 
 export type BeatsDocument = {
@@ -22,11 +26,11 @@ export function emptyBeatsDocument(): BeatsDocument {
   return { version: 1, beats: [], activeBeatId: null };
 }
 
-export function clonePattern(pattern: boolean[][]): boolean[][] {
+export function clonePattern(pattern: StepCell[][]): StepCell[][] {
   return pattern.map((row) => [...row]);
 }
 
-export function patternsEqual(a: boolean[][], b: boolean[][]): boolean {
+export function patternsEqual(a: StepCell[][], b: StepCell[][]): boolean {
   if (a.length !== b.length) return false;
   for (let i = 0; i < a.length; i++) {
     const ra = a[i];
@@ -37,13 +41,21 @@ export function patternsEqual(a: boolean[][], b: boolean[][]): boolean {
   return true;
 }
 
-export function normalizePattern(raw: unknown): boolean[][] {
+function cellFromRaw(v: unknown): StepCell {
+  if (v === STEP_GRACE || v === 2) return STEP_GRACE;
+  if (v === true || v === STEP_HIT || v === 1) return STEP_HIT;
+  return STEP_OFF;
+}
+
+export function normalizePattern(raw: unknown): StepCell[][] {
   const empty = emptyPattern();
   if (!Array.isArray(raw)) return empty;
   return LANES.map((_, ri) => {
     const row = raw[ri];
     if (!Array.isArray(row)) return [...empty[ri]];
-    return Array.from({ length: STEP_COUNT }, (_, si) => Boolean(row[si]));
+    return Array.from({ length: STEP_COUNT }, (_, si) =>
+      cellFromRaw(row[si]),
+    );
   });
 }
 

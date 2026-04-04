@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Beat Machine",
-  description: "32-step drum sequencer with custom samples",
+  description: "32-step 32nd-note drum sequencer with custom samples",
 };
 
 export default function RootLayout({

@@ -1,6 +1,6 @@
 # Beat Machine
 
-32-step browser drum sequencer (Next.js). Patterns and BPM/swing are saved with **Vercel KV** (via `@vercel/kv`).
+32-step browser drum sequencer (one 4/4 bar at 32nd-note resolution; Next.js). Saved beats use **[Upstash Redis](https://upstash.com/)** via `@upstash/redis` (REST).
 
 ## Run locally
 
@@ -11,27 +11,29 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-### Environment (saved beats)
+### Environment (`.env.local`)
 
-Create `.env.local` with credentials from your Vercel storage (Redis/KV / Upstash):
+Copy `.env.example` → `.env.local` and fill in values from the [Upstash console](https://console.upstash.com/) → your database → **REST API**:
 
-```bash
-KV_REST_API_URL="https://..."
-KV_REST_API_TOKEN="..."
-```
+| Variable | Purpose |
+|----------|---------|
+| `BEAT_KV_REST_API_URL` | REST endpoint (e.g. `https://xxx.upstash.io`) |
+| `BEAT_KV_REST_API_TOKEN` | Primary token (read/write) |
 
-Without these, the app runs but the **Saved Beats** API returns an error until KV is configured.
+Optional in `.env.local` (not read by the app, for your own use): `BEAT_KV_REST_API_READ_ONLY_TOKEN`, `BEAT_REDIS_URL`, `BEAT_KV_URL`.
 
-Optional:
+Optional for the app:
 
-- **`BEAT_MACHINE_KV_KEY`** — If set, beats are stored under `beatmachine:v1:<your value>`. If unset, the key includes `VERCEL_ENV` (`production` / `preview` / `development`) so Production and Preview use separate data.
+- **`BEAT_MACHINE_KV_KEY`** — If set, beats are stored under `beatmachine:v1:<your value>`. If unset, the Redis key includes `VERCEL_ENV` (`production` / `preview` / `development`).
 
-## Deploy on Vercel (quick)
+Without `BEAT_KV_REST_API_URL` and `BEAT_KV_REST_API_TOKEN`, the **Saved Beats** API returns an error until Redis is configured.
 
-1. Push this repo to GitHub and import the project in [Vercel](https://vercel.com/new).
-2. In the Vercel project, open **Storage** → create or link a **Redis** database (Upstash). Vercel will inject `KV_REST_API_URL` and `KV_REST_API_TOKEN` into the project environment.
-3. Redeploy if the env vars were added after the first deploy.
+## Deploy on Vercel
 
-Static assets (default `.wav` samples) live in `/public` and deploy automatically.
+1. Import the repo in [Vercel](https://vercel.com/new).
+2. Add the same **`BEAT_KV_REST_API_URL`** and **`BEAT_KV_REST_API_TOKEN`** in **Project → Settings → Environment Variables** (from Upstash REST API).
+3. Redeploy after saving env vars.
 
-**Note:** Saved beats are **one shared list per deployment environment** (not per-user). Anyone with your URL can see and change beats unless you add authentication later.
+Static samples in `/public` deploy with the app.
+
+**Note:** Saved beats are **one shared list per Redis key / environment** (not per-user) unless you add authentication.
